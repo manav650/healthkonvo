@@ -1,0 +1,197 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>HealthKonvo</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <!-- <link rel="stylesheet" href="{static 'style.css'}" /> -->
+    <link rel="stylesheet" href="{% static 'style.css' %}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  </head>
+
+  <body>
+    <!-- partial:index.partial.html -->
+    <section class="msger">
+      <header class="msger-header">
+        <div class="msger-header-title">
+          <!-- <i class="fas fa-bug"></i>  -->
+
+          HealthKonvo chatbot
+
+          <!-- <i class="fas fa-bug"></i> -->
+        </div>
+      </header>
+
+      <main class="msger-chat">
+        <div class="msg left-msg">
+          <div
+            class="msg-img"
+            style="background-image: url(/static/bot.jpg)"
+          ></div>
+
+          <div class="msg-bubble">
+            <div class="msg-info">
+              <div class="msg-info-name">HealthKonvo</div>
+              <div class="msg-info-time">12:45</div>
+            </div>
+
+            <div class="msg-text">
+              Hi, welcome to HealthKonvo! Send all symptoms you are
+              experiencing.
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <form class="msger-inputarea">
+        <input
+          type="text"
+          class="msger-input"
+          id="textInput"
+          autocomplete="off"
+          placeholder="Enter your message..."
+        />
+        <button type="submit" class="msger-send-btn">Send</button>
+      </form>
+    </section>
+    <!-- partial -->
+    <script src="https://use.fontawesome.com/releases/v5.0.13/js/all.js"></script>
+    <script>
+      const msgerForm = get(".msger-inputarea");
+      const msgerInput = get(".msger-input");
+      const msgerChat = get(".msger-chat");
+      var mainDetails;
+
+      // Icons made by Freepik from www.flaticon.com
+      const BOT_IMG = "/static/bot.jpg";
+      const PERSON_IMG = "/static/avt.jpg";
+      const BOT_NAME = "HealthKonvo";
+      const PERSON_NAME = "You";
+
+      msgerForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const msgText = msgerInput.value;
+        if (!msgText) return;
+
+        appendMessage(PERSON_NAME, PERSON_IMG, "right", msgText);
+        msgerInput.value = "";
+        botResponse(msgText);
+      });
+
+      function appendMessage(name, img, side, text) {
+        //   Simple solution for small apps
+        const msgHTML = `
+      <div class="msg ${side}-msg">
+        <div class="msg-img" style="background-image: url(${img})"></div>
+
+        <div class="msg-bubble">
+          <div class="msg-info">
+            <div class="msg-info-name">${name}</div>
+            <div class="msg-info-time">${formatDate(new Date())}</div>
+          </div>
+
+          <div class="msg-text">${text}</div>
+        </div>
+      </div>
+      `;
+
+        msgerChat.insertAdjacentHTML("beforeend", msgHTML);
+        //    msgerChat.scrollTop += 500;
+        //    msgerChat.scrollTop += msgerChat.offsetHeight;
+        msgerChat.scrollTop = msgerChat.scrollHeight - msgerChat.clientHeight;
+      }
+
+      function showDetails(name) {
+        try {
+          var mess = mainDetails[name];
+
+          mess = mess.split(".");
+          console.log(1);
+          mess = mess.join("<br/><br/>");
+          mess = mess.split(":");
+          console.log(2);
+          mess = mess.join("<br/><br/>");
+          appendMessage(BOT_NAME, BOT_IMG, "left", mess);
+        } catch (error) {
+          console.log(error);
+        }
+        //     msgerChat.scrollTop += msgerChat.offsetHeight;
+        msgerChat.scrollTop = msgerChat.scrollHeight - msgerChat.clientHeight;
+      }
+
+      function appendButton(data) {
+        var div = document.createElement("div");
+        div.className = "msg left-msg butabove";
+
+        for (i in data) {
+          //  console.log(data[i]);
+          var div1 = document.createElement("div");
+          div1.className = "resp-but";
+          div1.innerText = i;
+
+          (function (i) {
+            div1.addEventListener("click", function () {
+              showDetails(i);
+            });
+          })(i);
+
+          div.appendChild(div1);
+        }
+
+        msgerChat.appendChild(div);
+        //      msgerChat.scrollTop += 500;
+        //  msgerChat.scrollTop += msgerChat.offsetHeight;
+        msgerChat.scrollTop = msgerChat.scrollHeight - msgerChat.clientHeight;
+      }
+
+      function botResponse(rawText) {
+        // Bot Response
+        $.ajax({
+          type: "POST",
+          url: "/get/",
+          data: {
+            msg: rawText,
+          },
+          success: function (data) {
+            var msgText;
+
+            //  data = JSON.parse(data);
+
+            console.log(data);
+
+            if (data["res"]["details"] == "") {
+              msgText = data["res"]["text"];
+            } else {
+              msgText =
+                data["res"]["text"] +
+                "<br/><br/> If you want to know more about the disease, select an option.";
+            }
+            appendMessage(BOT_NAME, BOT_IMG, "left", msgText);
+            appendButton(data["res"]["details"]);
+            mainDetails = data["res"]["details"];
+          },
+          error: function (data) {
+            console.log("Error!");
+          },
+        });
+      }
+
+      // Utils
+      function get(selector, root = document) {
+        return root.querySelector(selector);
+      }
+
+      function formatDate(date) {
+        const h = "0" + date.getHours();
+        const m = "0" + date.getMinutes();
+
+        return `${h.slice(-2)}:${m.slice(-2)}`;
+      }
+    </script>
+  </body>
+</html>
